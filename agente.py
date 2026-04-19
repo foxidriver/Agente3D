@@ -77,6 +77,13 @@ if st.button("List Sessions"):
     else:
         st.write("No sessions found.")
 
+# Frame for token usage display
+token_container = st.container()
+token_container.markdown("### Token Usage")
+token_counter = token_container.empty()
+total_tokens = 0
+token_counter.markdown(f"**Total tokens:** {total_tokens}")
+
 # Display chat history
 for message in st.session_state.messages:
     if message["role"] == "user":
@@ -89,15 +96,20 @@ if user_input := st.chat_input("Write a message..."):
     st.session_state.messages.append({"role": "user", "content": user_input})
     st.chat_message("user").write(user_input)
 
-    # Debug: Stampa il modello selezionato
-    print(f"[DEBUG] Modello selezionato in Streamlit: {repr(selected_model)}")
+    print(f"[DEBUG] Selected model in Streamlit: {repr(selected_model)}")
 
     try:
-        response_text = chat(
+        # Update chat call to handle the new return (text, tokens)
+        response_text, used_tokens = chat(
             st.session_state.client,
             st.session_state.messages,
             model=selected_model
         )
+
+        # Update total token count
+        total_tokens += used_tokens
+        token_counter.markdown(f"**Total tokens:** {total_tokens}")
+
         st.session_state.messages.append({"role": "assistant", "content": response_text})
         st.chat_message("assistant").write(response_text)
     except Exception as error:
@@ -106,4 +118,6 @@ if user_input := st.chat_input("Write a message..."):
 # Clear chat button
 if st.button("Clear chat"):
     st.session_state.messages = initial_messages(config["mistral"]["system_prompt"])
+    total_tokens = 0
+    token_counter.markdown(f"**Total tokens:** {total_tokens}")
     st.rerun()
