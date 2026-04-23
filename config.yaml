@@ -1,8 +1,9 @@
+# config.yaml
 # Configuration file for 3D Printing Agent
 version: "1.0"  # Version of the configuration file
 
-# Mistral AI settings (model and token are set via environment variables)
-mistral:
+# agent AI settings (model and token are set via environment variables)
+agent:
   system_prompt: |
     You are an expert 3D printing assistant.
     Always respond in Italian.

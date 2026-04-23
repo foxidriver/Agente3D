@@ -30,9 +30,9 @@ st.markdown(config["ui"]["subtitle"])
 
 # Model selection dropdown
 available_models = {
-    "Small (Routine tasks)": os.getenv("MISTRAL_MODEL_DEFAULT"),
-    "Large (Complex reasoning)": os.getenv("MISTRAL_MODEL_REASONING"),
-    "Code (Programming)": os.getenv("MISTRAL_MODEL_CODE"),
+    "Small (Routine tasks)": os.getenv("MODEL_DEFAULT"),
+    "Large (Complex reasoning)": os.getenv("MODEL_REASONING"),
+    "Code (Programming)": os.getenv("MODEL_CODE"),
 }
 
 selected_model_name = st.selectbox(
@@ -51,7 +51,7 @@ if "client" not in st.session_state:
         st.stop()
 
 if "messages" not in st.session_state:
-    st.session_state.messages = initial_messages(config["mistral"]["system_prompt"])
+    st.session_state.messages = initial_messages(config["agent"]["system_prompt"])
 
 # Session management
 session_id = st.text_input("Session ID", value="default_session")
@@ -117,7 +117,7 @@ if user_input := st.chat_input("Write a message..."):
 
 # Clear chat button
 if st.button("Clear chat"):
-    st.session_state.messages = initial_messages(config["mistral"]["system_prompt"])
+    st.session_state.messages = initial_messages(config[""]["system_prompt"])
     total_tokens = 0
     token_counter.markdown(f"**Total tokens:** {total_tokens}")
     st.rerun()

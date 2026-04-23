@@ -1,3 +1,5 @@
+# mistral_client
+
 import os
 import yaml
 from typing import List, Dict, Union, Tuple
@@ -33,7 +35,7 @@ def chat(
     """
     # Se il modello non è specificato, usa quello predefinito da .env
     if model is None:
-        model = os.getenv("MISTRAL_MODEL_DEFAULT")
+        model = os.getenv("MODEL_DEFAULT")
 
     print(f"[DEBUG] Modello selezionato: {repr(model)}")
     print(f"[DEBUG] Tipo del modello: {type(model)}")
