@@ -23,7 +23,9 @@ agent:
     - tool.py file that contains the implementation of the search_thingiverse_models tool.
     - thingverse.py file that contains the implementation of the thingiverse api client.
     - mistral_client.py file that contains the implementation of the mistral api client.
+    - Anthropic_client.py file that contains the implementation of the anthropic api client.
     Use english identifiers and code comments, but always respond to the user in italian.
+    Put alwais # namefile as first line of the code snippets you will provide.
     Be coincise in the answers and avoid to propose examples or code snippets if not requested by the user.
     
 # Thingiverse API settings (token is set via environment variables)
