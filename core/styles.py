@@ -1,69 +1,45 @@
-# core/styles.py
 import streamlit as st
 from typing import Dict, Any
 
-
 def setup_page(config: Dict[str, Any]) -> None:
-    """Configures the Streamlit page (must be called before any other st command)."""
+    """
+    Configures the Streamlit page. 
+    Set layout to 'wide' to accommodate the 3-column dashboard.
+    """
     st.set_page_config(
         page_title=config["ui"]["title"],
-        layout="centered"
+        layout="wide", # Essential for 3-column layout
+        initial_sidebar_state="expanded"
     )
 
-
 def apply_styles() -> None:
-    """Injects compact CSS for the sidebar and global layout."""
+    """
+    Injects custom CSS to manage independent scrolling and UI density.
+    """
     st.markdown("""
         <style>
-            /* Reduce general sidebar padding */
+            /* Main container padding adjustment */
+            [data-testid="stAppViewBlockContainer"] {
+                padding-top: 2rem;
+                padding-bottom: 1rem;
+                padding-left: 3rem;
+                padding-right: 3rem;
+            }
+
+            /* Compact sidebar styling */
             [data-testid="stSidebar"] {
                 padding-top: 0.5rem;
             }
-            [data-testid="stSidebar"] .block-container {
-                padding-top: 0.5rem;
-                padding-bottom: 0.5rem;
+
+            /* Independent scrolling container tweaks */
+            .stElementContainer {
+                margin-bottom: 0.5rem;
             }
-            /* Reduce margins between sidebar elements */
-            [data-testid="stSidebar"] .stMarkdown {
-                margin-bottom: 0rem;
-            }
-            [data-testid="stSidebar"] h3 {
-                font-size: 0.85rem;
-                margin-top: 0.3rem;
-                margin-bottom: 0.2rem;
-            }
-            /* Reduce selectbox size */
-            [data-testid="stSidebar"] .stSelectbox {
-                margin-bottom: 0rem;
-            }
-            /* Reduce button size */
-            [data-testid="stSidebar"] .stButton button {
-                padding: 0.2rem 0.5rem;
-                font-size: 0.8rem;
-            }
-            /* Reduce caption size */
-            [data-testid="stSidebar"] .stCaption {
-                font-size: 0.75rem;
-                margin-bottom: 0rem;
-            }
-            /* Reduce metric size */
-            [data-testid="stSidebar"] [data-testid="stMetric"] {
-                padding: 0.2rem 0rem;
-            }
-            [data-testid="stSidebar"] [data-testid="stMetricValue"] {
-                font-size: 1rem;
-            }
-            [data-testid="stSidebar"] [data-testid="stMetricLabel"] {
-                font-size: 0.75rem;
-            }
-            /* Reduce divider spacing */
-            [data-testid="stSidebar"] hr {
-                margin-top: 0.3rem;
-                margin-bottom: 0.3rem;
-            }
-            /* Reduce text input spacing */
-            [data-testid="stSidebar"] .stTextInput {
-                margin-bottom: 0.2rem;
+            
+            /* Section headers styling */
+            h3 {
+                font-size: 1.1rem !important;
+                font-weight: 700;
             }
         </style>
     """, unsafe_allow_html=True)
