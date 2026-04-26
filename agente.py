@@ -36,6 +36,62 @@ except Exception as e:
     st.error(f"❌ Errore imprevisto nel caricamento della configurazione: {str(e)}")
     st.stop()
 
+# --- CSS compatto per la sidebar ---
+st.markdown("""
+    <style>
+        /* Riduce padding generale della sidebar */
+        [data-testid="stSidebar"] {
+            padding-top: 0.5rem;
+        }
+        [data-testid="stSidebar"] .block-container {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+        /* Riduce margini tra elementi della sidebar */
+        [data-testid="stSidebar"] .stMarkdown {
+            margin-bottom: 0rem;
+        }
+        [data-testid="stSidebar"] h3 {
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+            margin-bottom: 0.2rem;
+        }
+        /* Riduce dimensione selectbox */
+        [data-testid="stSidebar"] .stSelectbox {
+            margin-bottom: 0rem;
+        }
+        /* Riduce dimensione bottoni */
+        [data-testid="stSidebar"] .stButton button {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.8rem;
+        }
+        /* Riduce dimensione caption */
+        [data-testid="stSidebar"] .stCaption {
+            font-size: 0.75rem;
+            margin-bottom: 0rem;
+        }
+        /* Riduce dimensione metric */
+        [data-testid="stSidebar"] [data-testid="stMetric"] {
+            padding: 0.2rem 0rem;
+        }
+        [data-testid="stSidebar"] [data-testid="stMetricValue"] {
+            font-size: 1rem;
+        }
+        [data-testid="stSidebar"] [data-testid="stMetricLabel"] {
+            font-size: 0.75rem;
+        }
+        /* Riduce spazio divisori */
+        [data-testid="stSidebar"] hr {
+            margin-top: 0.3rem;
+            margin-bottom: 0.3rem;
+        }
+        /* Riduce spazio input testo */
+        [data-testid="stSidebar"] .stTextInput {
+            margin-bottom: 0.2rem;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- Helper functions ---
 @handle_streamlit_errors
 def is_anthropic_model(model: str) -> bool:
@@ -103,25 +159,25 @@ try:
 
             col_save, col_load = st.columns(2)
             with col_save:
-                if st.button("Salva", use_container_width=True):
+                if st.button("Salva", use_container_width=True, key="save_button"):
                     try:
                         save_session(session_id, st.session_state.messages)
-                        st.success("✅ Salvata con successo!")
+                        st.success("✅ Salvata!")
                     except Exception as e:
-                        st.error(f"❌ Errore nel salvataggio: {str(e)}")
+                        st.error(f"❌ Errore: {str(e)}")
 
             with col_load:
-                if st.button("Carica", use_container_width=True):
+                if st.button("Carica", use_container_width=True, key="load_button"):
                     try:
                         st.session_state.messages = load_session(session_id)
-                        st.success("✅ Caricata con successo!")
+                        st.success("✅ Caricata!")
                         st.rerun()
                     except FileNotFoundError:
                         st.error("❌ Sessione non trovata")
                     except Exception as e:
-                        st.error(f"❌ Errore nel caricamento: {str(e)}")
+                        st.error(f"❌ Errore: {str(e)}")
 
-            if st.button("Elenca sessioni", use_container_width=True):
+            if st.button("Elenca sessioni", use_container_width=True, key="list_button"):
                 try:
                     sessions = list_sessions()
                     if sessions:
@@ -130,23 +186,23 @@ try:
                     else:
                         st.caption("Nessuna sessione disponibile.")
                 except Exception as e:
-                    st.error(f"❌ Errore nell'elenco sessioni: {str(e)}")
+                    st.error(f"❌ Errore: {str(e)}")
         except Exception as e:
             st.error(f"❌ Errore nella gestione delle sessioni: {str(e)}")
 
         st.divider()
 
         # --- Token usage ---
-        st.markdown("### 📊 Token utilizzati")
+        st.markdown("### 📊 Token")
         try:
             st.metric(label="Totale", value=st.session_state.get("total_tokens", 0))
         except Exception as e:
-            st.error(f"❌ Errore nel calcolo dei token: {str(e)}")
+            st.error(f"❌ Errore token: {str(e)}")
 
         st.divider()
 
         # --- Clear chat ---
-        if st.button("🗑️ Pulisci chat", type="primary", use_container_width=True):
+        if st.button("🗑️ Pulisci chat", type="primary", use_container_width=True, key="clear_button"):
             try:
                 st.session_state.messages = initial_messages(config["agent"]["system_prompt"])
                 st.session_state.total_tokens = 0
