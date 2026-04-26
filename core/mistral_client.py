@@ -1,45 +1,42 @@
-# mistral_client
-
+# core/mistral_client.py
 import os
-import yaml
 from typing import List, Dict, Union, Tuple
 from mistralai.client import Mistral
 from core.tools import TOOLS, execute_tool
-
+ 
+ 
 def create_client() -> Mistral:
     """Creates and returns the Mistral client."""
     api_key = os.getenv("MISTRAL_API_KEY")
     if not api_key:
         raise ValueError("Mistral API key not found in environment variables.")
     return Mistral(api_key=api_key)
-
+ 
+ 
 def initial_messages(custom_prompt: str = None) -> List[Dict[str, str]]:
     """Returns the initial list of messages with the system prompt."""
-    system_prompt = custom_prompt
-    return [{"role": "system", "content": system_prompt}]
-
+    return [{"role": "system", "content": custom_prompt}]
+ 
+ 
 def count_tokens(text: str) -> int:
-    """
-    A simple approximation of token count based on character length.
-    """
-    return (len(text) // 4) + 2  # Approssimazione semplice
-
+    """Simple approximation of token count based on character length."""
+    return (len(text) // 4) + 2
+ 
+ 
 def chat(
     client: Mistral,
     messages: List[Dict[str, Union[str, List[Dict]]]],
-    model: str = None  # Parametro opzionale
+    model: str = None
 ) -> Tuple[str, int]:
     """
-    Sends messages to Mistral and returns the text response and il numero di token utilizzati.
-    Uses the model specified by the user or the default from .env.
+    Sends messages to Mistral and returns the text response and token count.
+    Handles tool calls (e.g. Thingiverse search) before returning.
     """
-    # Se il modello non è specificato, usa quello predefinito da .env
     if model is None:
         model = os.getenv("MODEL_DEFAULT")
-
-    print(f"[DEBUG] Modello selezionato: {repr(model)}")
-    print(f"[DEBUG] Tipo del modello: {type(model)}")
-
+ 
+    print(f"[DEBUG] Model selected: {repr(model)}")
+ 
     try:
         response = client.chat.complete(
             model=model,
@@ -47,26 +44,20 @@ def chat(
             tools=TOOLS,
             tool_choice="auto"
         )
-
-        # Conta i token nella richiesta e nella risposta
-        input_tokens = sum(count_tokens(msg["content"]) for msg in messages if msg.get("content"))
-        output_tokens = count_tokens(response.choices[0].message.content)
-        total_tokens = input_tokens + output_tokens
-
-        return response.choices[0].message.content, total_tokens
-
     except Exception as error:
-        print(f"[DEBUG] Errore completo: {error}")
-        print(f"[DEBUG] Tipo dell'errore: {type(error)}")
+        print(f"[DEBUG] Mistral error: {error}")
         return f"Error: {str(error)}", 0
-
+ 
+    message = response.choices[0].message
+ 
+    # Handle tool call if requested by the model
     if message.tool_calls:
         tool_call = message.tool_calls[0]
         try:
             result = execute_tool(tool_call)
         except Exception as error:
             return f"Error executing tool: {str(error)}", 0
-
+ 
         messages.append({
             "role": "assistant",
             "content": "",
@@ -82,20 +73,31 @@ def chat(
             "tool_call_id": tool_call.id,
             "content": result
         })
-
+ 
         try:
             final_response = client.chat.complete(
                 model=model,
                 messages=messages
             )
-            final_input_tokens = sum(count_tokens(msg["content"]) for msg in messages if msg.get("content"))
-            final_output_tokens = count_tokens(final_response.choices[0].message.content)
-            final_total_tokens = final_input_tokens + final_output_tokens
-
-            return final_response.choices[0].message.content, final_total_tokens
+            final_input_tokens = sum(
+                count_tokens(msg["content"])
+                for msg in messages if msg.get("content")
+            )
+            final_output_tokens = count_tokens(
+                final_response.choices[0].message.content
+            )
+            return (
+                final_response.choices[0].message.content,
+                final_input_tokens + final_output_tokens
+            )
         except Exception as error:
             return f"Error in final Mistral call: {str(error)}", 0
-
-    return message.content, 0
-
+ 
+    # Standard response without tool call
+    input_tokens = sum(
+        count_tokens(msg["content"])
+        for msg in messages if msg.get("content")
+    )
+    output_tokens = count_tokens(message.content)
+    return message.content, input_tokens + output_tokens
  
