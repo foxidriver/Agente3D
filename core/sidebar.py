@@ -5,11 +5,10 @@ from typing import Dict, Any
 from core.session_manager import save_session, load_session, list_sessions
 from core.model_router import is_anthropic_model
 
-
 def render_sidebar(config: Dict[str, Any]) -> tuple:
     """
-    Renders the full sidebar UI.
-    Returns (selected_model, selected_mode).
+    Renders the full sidebar UI components.
+    Returns a tuple of (selected_model, selected_mode).
     """
     with st.sidebar:
         selected_model = _render_model_selector()
@@ -21,20 +20,17 @@ def render_sidebar(config: Dict[str, Any]) -> tuple:
         _render_token_counter()
         st.divider()
         _render_clear_button(config)
-
     return selected_model, selected_mode
 
-
 def _render_model_selector() -> str:
-    """Renders the model selection dropdown and returns the selected model id."""
+    """Renders the AI model selection dropdown and returns model ID."""
     st.markdown("### 🤖 Modello")
-
     available_models = {
         "Small — Routine": os.getenv("MODEL_DEFAULT"),
         "Reasoning — Complesso": os.getenv("MODEL_REASONING"),
         "Code — Programmazione": os.getenv("MODEL_CODE"),
     }
-
+    
     try:
         selected_name = st.selectbox(
             "Seleziona:",
@@ -43,96 +39,68 @@ def _render_model_selector() -> str:
             label_visibility="collapsed"
         )
         selected_model = available_models[selected_name]
-
-        if selected_model is None:
-            st.error("❌ Nessun modello disponibile nelle variabili d'ambiente")
+        if not selected_model:
+            st.error("❌ No models found in environment variables")
             st.stop()
     except Exception as e:
-        st.error(f"❌ Errore nel caricamento dei modelli: {str(e)}")
+        st.error(f"❌ Model loading error: {str(e)}")
         st.stop()
 
+    # Display provider info
     if is_anthropic_model(selected_model):
         st.caption(f"🟠 Anthropic — `{selected_model}`")
     else:
         st.caption(f"🔵 Mistral — `{selected_model}`")
-
+    
     return selected_model
 
-
 def _render_mode_selector() -> str:
-    """Renders the working mode selector and returns the selected mode."""
+    """Renders the application mode selector."""
     st.markdown("### 🔧 Modalità")
-    mode = st.radio(
+    return st.radio(
         "Modalità",
         options=["Programmazione", "Progetti 3D"],
         label_visibility="collapsed"
     )
-    return mode
-
 
 def _render_session_manager() -> None:
-    """Renders the session save/load/list controls."""
+    """Renders session persistence controls (save/load)."""
     st.markdown("### 💾 Sessioni")
-
-    try:
-        session_id = st.text_input(
-            "ID Sessione",
-            value="default_session",
-            label_visibility="collapsed",
-            placeholder="ID Sessione"
-        )
-
-        col_save, col_load = st.columns(2)
-        with col_save:
-            if st.button("Salva", use_container_width=True, key="save_button"):
-                try:
-                    save_session(session_id, st.session_state.messages)
-                    st.success("✅ Salvata!")
-                except Exception as e:
-                    st.error(f"❌ Errore: {str(e)}")
-
-        with col_load:
-            if st.button("Carica", use_container_width=True, key="load_button"):
-                try:
-                    st.session_state.messages = load_session(session_id)
-                    st.success("✅ Caricata!")
-                    st.rerun()
-                except FileNotFoundError:
-                    st.error("❌ Sessione non trovata")
-                except Exception as e:
-                    st.error(f"❌ Errore: {str(e)}")
-
-        if st.button("Elenca sessioni", use_container_width=True, key="list_button"):
+    session_id = st.text_input(
+        "ID Sessione",
+        value="default_session",
+        label_visibility="collapsed",
+        placeholder="ID Sessione"
+    )
+    
+    col_save, col_load = st.columns(2)
+    with col_save:
+        if st.button("Salva", use_container_width=True, key="save_btn"):
             try:
-                sessions = list_sessions()
-                if sessions:
-                    for s in sessions:
-                        st.caption(f"- {s}")
-                else:
-                    st.caption("Nessuna sessione disponibile.")
+                save_session(session_id, st.session_state.messages)
+                st.success("✅ Saved!")
             except Exception as e:
-                st.error(f"❌ Errore: {str(e)}")
-
-    except Exception as e:
-        st.error(f"❌ Errore nella gestione delle sessioni: {str(e)}")
-
+                st.error(f"❌ Error: {str(e)}")
+                
+    with col_load:
+        if st.button("Carica", use_container_width=True, key="load_btn"):
+            try:
+                st.session_state.messages = load_session(session_id)
+                st.success("✅ Loaded!")
+                st.rerun()
+            except FileNotFoundError:
+                st.error("❌ Not found")
+            except Exception as e:
+                st.error(f"❌ Error: {str(e)}")
 
 def _render_token_counter() -> None:
-    """Renders the cumulative token usage metric."""
+    """Displays cumulative token usage for the current session."""
     st.markdown("### 📊 Token")
-    try:
-        st.metric(label="Totale", value=st.session_state.get("total_tokens", 0))
-    except Exception as e:
-        st.error(f"❌ Errore token: {str(e)}")
-
+    st.metric(label="Totale", value=st.session_state.get("total_tokens", 0))
 
 def _render_clear_button(config: Dict[str, Any]) -> None:
-    """Renders the clear chat button and handles the reset logic."""
+    """Renders the chat reset button."""
     from core.session_state import reset_conversation
-
-    if st.button("🗑️ Pulisci chat", type="primary", use_container_width=True, key="clear_button"):
-        try:
-            reset_conversation(config)
-            st.rerun()
-        except Exception as e:
-            st.error(f"❌ Errore nella pulizia della chat: {str(e)}")
+    if st.button("🗑️ Pulisci chat", type="primary", use_container_width=True):
+        reset_conversation(config)
+        st.rerun()
