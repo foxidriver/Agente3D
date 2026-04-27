@@ -1,6 +1,7 @@
 # core/session_state.py
 import streamlit as st
 from typing import Dict, Any
+from datetime import datetime
 from core.mistral_client import create_client, initial_messages
 from core.anthropic_client import create_anthropic_client
 
@@ -13,6 +14,7 @@ def init_session_state(config: Dict[str, Any], selected_model: str) -> None:
     _init_clients()
     _init_messages(config)
     _init_counters(selected_model)
+    _init_session_id()
     _handle_model_change(config, selected_model)
 
 
@@ -57,6 +59,12 @@ def _init_counters(selected_model: str) -> None:
         st.session_state.total_tokens = 0
 
 
+def _init_session_id() -> None:
+    """Initializes a unique session ID based on current timestamp."""
+    if "session_id" not in st.session_state:
+        st.session_state.session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
 def _handle_model_change(config: Dict[str, Any], selected_model: str) -> None:
     """Resets the conversation when the user switches model."""
     if st.session_state.current_model != selected_model:
@@ -71,6 +79,7 @@ def _handle_model_change(config: Dict[str, Any], selected_model: str) -> None:
 
 
 def reset_conversation(config: Dict[str, Any]) -> None:
-    """Resets messages and token counter (used by clear button)."""
+    """Resets messages, token counter, and generates a fresh session ID."""
     st.session_state.messages = initial_messages(config["agent"]["system_prompt"])
     st.session_state.total_tokens = 0
+    st.session_state.session_id = datetime.now().strftime("%Y%m%d_%H%M%S")

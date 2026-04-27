@@ -2,14 +2,12 @@
 import os
 import streamlit as st
 from typing import Dict, Any
-from core.session_manager import save_session, load_session, list_sessions
+from core.session_manager import load_session, list_sessions, rename_session, delete_session
 from core.model_router import is_anthropic_model
 
+
 def render_sidebar(config: Dict[str, Any]) -> tuple:
-    """
-    Renders the full sidebar UI components.
-    Returns a tuple of (selected_model, selected_mode).
-    """
+    """Renders the full sidebar UI. Returns (selected_model, selected_mode)."""
     with st.sidebar:
         selected_model = _render_model_selector()
         st.divider()
@@ -22,6 +20,7 @@ def render_sidebar(config: Dict[str, Any]) -> tuple:
         _render_clear_button(config)
     return selected_model, selected_mode
 
+
 def _render_model_selector() -> str:
     """Renders the AI model selection dropdown and returns model ID."""
     st.markdown("### 🤖 Modello")
@@ -30,7 +29,6 @@ def _render_model_selector() -> str:
         "Reasoning — Complesso": os.getenv("MODEL_REASONING"),
         "Code — Programmazione": os.getenv("MODEL_CODE"),
     }
-    
     try:
         selected_name = st.selectbox(
             "Seleziona:",
@@ -46,13 +44,13 @@ def _render_model_selector() -> str:
         st.error(f"❌ Model loading error: {str(e)}")
         st.stop()
 
-    # Display provider info
     if is_anthropic_model(selected_model):
         st.caption(f"🟠 Anthropic — `{selected_model}`")
     else:
         st.caption(f"🔵 Mistral — `{selected_model}`")
-    
+
     return selected_model
+
 
 def _render_mode_selector() -> str:
     """Renders the application mode selector."""
@@ -63,40 +61,62 @@ def _render_mode_selector() -> str:
         label_visibility="collapsed"
     )
 
-def _render_session_manager() -> None:
-    """Renders session persistence controls (save/load)."""
-    st.markdown("### 💾 Sessioni")
-    session_id = st.text_input(
-        "ID Sessione",
-        value="default_session",
-        label_visibility="collapsed",
-        placeholder="ID Sessione"
-    )
-    
-    col_save, col_load = st.columns(2)
-    with col_save:
-        if st.button("Salva", use_container_width=True, key="save_btn"):
+
+@st.dialog("📂 Gestione Sessioni")
+def _session_manager_dialog() -> None:
+    """Modal dialog listing all sessions with load, rename, delete actions."""
+    sessions = list_sessions()
+    if not sessions:
+        st.info("Nessuna sessione salvata.")
+        return
+
+    for sid in sorted(sessions, reverse=True):
+        col_name, col_load, col_rename, col_delete = st.columns([3, 1, 1, 1])
+        col_name.caption(sid)
+
+        if col_load.button("📥", key=f"load_{sid}", help="Carica"):
             try:
-                save_session(session_id, st.session_state.messages)
-                st.success("✅ Saved!")
-            except Exception as e:
-                st.error(f"❌ Error: {str(e)}")
-                
-    with col_load:
-        if st.button("Carica", use_container_width=True, key="load_btn"):
-            try:
-                st.session_state.messages = load_session(session_id)
-                st.success("✅ Loaded!")
+                st.session_state.messages = load_session(sid)
+                st.session_state.session_id = sid
                 st.rerun()
-            except FileNotFoundError:
-                st.error("❌ Not found")
             except Exception as e:
-                st.error(f"❌ Error: {str(e)}")
+                st.error(f"❌ {str(e)}")
+
+        if col_rename.button("✏️", key=f"rename_{sid}", help="Rinomina"):
+            st.session_state[f"renaming_{sid}"] = True
+
+        if col_delete.button("🗑️", key=f"delete_{sid}", help="Elimina"):
+            try:
+                delete_session(sid)
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ {str(e)}")
+
+        if st.session_state.get(f"renaming_{sid}"):
+            new_name = st.text_input("Nuovo nome:", key=f"newname_{sid}")
+            if st.button("Conferma", key=f"confirm_{sid}") and new_name:
+                try:
+                    rename_session(sid, new_name)
+                    st.session_state.pop(f"renaming_{sid}")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ {str(e)}")
+
+
+def _render_session_manager() -> None:
+    """Renders session info and the button to open the session manager dialog."""
+    st.caption(f"ID: `{st.session_state.get('session_id', '—')}`")
+    st.write("")
+    st.write("")
+    if st.button("📂 Gestisci sessioni", use_container_width=True):
+        _session_manager_dialog()
+
 
 def _render_token_counter() -> None:
     """Displays cumulative token usage for the current session."""
     st.markdown("### 📊 Token")
     st.metric(label="Totale", value=st.session_state.get("total_tokens", 0))
+
 
 def _render_clear_button(config: Dict[str, Any]) -> None:
     """Renders the chat reset button."""

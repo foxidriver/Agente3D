@@ -49,3 +49,32 @@ def list_sessions() -> List[str]:
         return []
 
     return [f.split(".")[0] for f in os.listdir(session_dir) if f.endswith(".pkl")]
+
+def rename_session(old_session_id: str, new_session_id: str) -> None:
+    """
+    Rename a session.
+
+    Args:
+        old_session_id (str): Current session ID.
+        new_session_id (str): New session ID.
+    """
+    old_session_path = os.path.join("sessions", f"{old_session_id}.pkl")
+    new_session_path = os.path.join("sessions", f"{new_session_id}.pkl")
+
+    if not os.path.exists(old_session_path):
+        raise FileNotFoundError(f"Session {old_session_id} not found.")
+
+    os.rename(old_session_path, new_session_path)
+
+def delete_session(session_id: str) -> None:
+    """
+    Delete a session.
+
+    Args:
+        session_id (str): Session ID to delete.
+    """
+    session_path = os.path.join("sessions", f"{session_id}.pkl")
+    if not os.path.exists(session_path):
+        raise FileNotFoundError(f"Session {session_id} not found.")
+
+    os.remove(session_path)

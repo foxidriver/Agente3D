@@ -2,6 +2,11 @@
 import streamlit as st
 from typing import Dict, Any
 from core.model_router import route_chat
+# core/chat_panel.py
+import streamlit as st
+from typing import Dict, Any
+from core.model_router import route_chat
+from core.session_manager import save_session
 
 
 def render_chat(messages: list) -> None:
@@ -18,8 +23,7 @@ def render_chat(messages: list) -> None:
 
 def handle_input(config: Dict[str, Any], selected_model: str) -> None:
     """
-    Handles the chat input box, sends the message to the correct API,
-    and appends the assistant reply to the session state.
+    Handles chat input, routes to API, appends reply, and auto-saves session.
     """
     if user_input := st.chat_input("Scrivi un messaggio..."):
         try:
@@ -37,6 +41,8 @@ def handle_input(config: Dict[str, Any], selected_model: str) -> None:
             if response_text is not None:
                 st.session_state.total_tokens += used_tokens
                 st.session_state.messages.append({"role": "assistant", "content": response_text})
+                # Auto-save after every interaction
+                save_session(st.session_state.session_id, st.session_state.messages)
                 st.rerun()
 
         except Exception as e:
