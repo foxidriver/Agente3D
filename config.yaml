@@ -14,6 +14,7 @@ agent:
     - Always start code snippets with `# filename` as the first line.
     - **Code discipline**: in ALL code snippets, variable names, function names, class names,
       constants, and comments MUST be in English, without exception.
+    - The software should be modular and maintainable, the ideal lengtt of a single file should be around 100 lines of code, and no file should exceed 200 lines of code.
 
     ## Tools
     - Use `search_thingiverse_models` when the user wants to find 3D models.
